@@ -1,13 +1,3 @@
-/*
-Прочтение и сохранение в переменной файла-шаблона
-Нахождение всех имён тегов в файле шаблона
-Замена шаблонных тегов содержимым файлов-компонентов
-Запись изменённого шаблона в файл index.html в папке project-dist
-Использовать скрипт написанный в задании 05-merge-styles для создания файла style.css
-Использовать скрипт из задания 04-copy-directory для переноса папки assets в папку project-dist
-*/
-// Импорт всех требуемых модулей
-// const fs = require("fs/promises");
 const fs = require('fs');
 const fsProm = require('fs/promises');
 const path = require('path');
@@ -32,19 +22,13 @@ async function crateBuildFolder() {
 
 async function createHtmlBundle() {
   
-  // readDir()
-  // const articles = await fsProm.readFile(path.join(pathToComponentsSource, 'articles.html'));
-  // const footer = await fsProm.readFile(path.join(pathToComponentsSource, 'footer.html'));
-  // const header = await fsProm.readFile(path.join(pathToComponentsSource, 'header.html'));
-
   const files = await fsProm.readdir(pathToComponentsSource); // Чтение содержимого папки
 
   // Прочитаем файл шаблона
   const readable = fs.createReadStream(pathToHtmlSource, 'utf8');
 
   readable.on('data', (chunk) => {
-    htmlFile = chunk.toString()
-    // htmlFile = htmlFile.replace('{{footer}}', footer);
+    htmlFile = chunk.toString() // Прочтение и сохранение в переменной файла-шаблона
   });
 
 
@@ -57,7 +41,7 @@ async function createHtmlBundle() {
       const ext = path.extname(file);
       if(ext === '.html'){
         let templatePart = path.basename(file, ext)
-        console.log(templatePart)
+
         // чтение файла html
         fs.readFile(filePath, 'utf-8', (err,content) =>{
           if(err) {
@@ -65,31 +49,23 @@ async function createHtmlBundle() {
           }
           
           objTemplatePoints[templatePart] = content
-          // Если в шаблоне есть {{...}}, заменить
-          if(htmlFile.includes(templatePart)){
-            console.log('файл шаблона содержит кусок '+templatePart)
-            htmlFile.replace('templatePart', content)
 
+          if(htmlFile.includes(templatePart)){ // Нахождение всех имён тегов в файле шаблона
+            //файл шаблона содержит кусок {{templatePart}}
 
-            const readable = fs.createReadStream(pathToHtml, 'utf8');
+            let readable = fs.createReadStream(pathToHtmlSource, 'utf8');
+
             readable.on('data', (chunk) => {
-              htmlFile = chunk.toString().replace('templatePart', content)
-              // htmlFile = htmlFile.replace('{{footer}}', footer);
+              htmlFile = htmlFile.replace(`{{${templatePart}}}`, objTemplatePoints[templatePart]) // Замена шаблонных тегов содержимым файлов-компонентов
             });
             readable.on('end', async () => {
               await fsProm.writeFile(pathToHtmlBundle, htmlFile, 'utf8');
             });
           }
         })
-
       }
     }
-    // console.log(file)
-    // await console.log('objTemplatePoints = ', objTemplatePoints)
   });  
-  
-
-
 }
 
 function createCssBundle(){
@@ -153,4 +129,3 @@ async function buildPage() {
 }
 
 buildPage();
-
