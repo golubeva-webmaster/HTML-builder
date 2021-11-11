@@ -1,36 +1,45 @@
-const fs = require('fs');
-const fsProm = require('fs/promises');
-const path = require('path');
+const fs = require("fs");
+const fsProm = require("fs/promises");
+const path = require("path");
 
-const pathToCssSource = path.join(__dirname, 'styles');
-const pathToHtmlSource = path.join(__dirname, 'template.html');
-const pathToAssetsSource = path.join(__dirname, 'assets');
-const pathToComponentsSource = path.join(__dirname, 'components');
-const pathToCssBundle = path.join(__dirname, 'project-dist', 'style.css');
-const pathToAssetsBundle = path.join(__dirname, 'project-dist', 'assets');
-const pathToHtmlBundle = path.join(__dirname, 'project-dist', 'index.html');
+const pathToCssSource = path.join(__dirname, "styles");
+const pathToHtmlSource = path.join(__dirname, "template.html");
+const pathToAssetsSource = path.join(__dirname, "assets");
+const pathToComponentsSource = path.join(__dirname, "components");
+const pathToCssBundle = path.join(__dirname, "project-dist", "style.css");
+const pathToAssetsBundle = path.join(__dirname, "project-dist", "assets");
+const pathToHtmlBundle = path.join(__dirname, "project-dist", "index.html");
 
 const needPath = path.join(__dirname, "styles"); //pathToCssSource
 const bandleFile = path.join(__dirname, "project-dist", "bundle.css"); //pathToCssBundle
-let objTemplatePoints = {}
-let htmlFile = '';
+let objTemplatePoints = {};
+let htmlFile = "";
 
 async function crateBuildFolder() {
-  const newFolderPath = path.join(__dirname, 'project-dist');
+  const newFolderPath = path.join(__dirname, "project-dist");
+
+  // Удалим сначало папку бандла
+  const stat = await fsProm.stat(newFolderPath);
+  if (stat.isDirectory()) {
+    await fsProm.rm(newFolderPath, { recursive: true, force: true }, (err) => {
+      if (err) {
+        // console.error(err);
+      }
+    });
+  }
+  
   await fsProm.mkdir(newFolderPath, { recursive: true });
 }
 
 async function createHtmlBundle() {
-  
   const files = await fsProm.readdir(pathToComponentsSource); // Чтение содержимого папки
 
   // Прочитаем файл шаблона
-  const readable = fs.createReadStream(pathToHtmlSource, 'utf8');
+  const readable = fs.createReadStream(pathToHtmlSource, "utf8");
 
-  readable.on('data', (chunk) => {
-    htmlFile = chunk.toString() // Прочтение и сохранение в переменной файла-шаблона
+  readable.on("data", (chunk) => {
+    htmlFile = chunk.toString(); // Прочтение и сохранение в переменной файла-шаблона
   });
-
 
   files.forEach(async (file) => {
     // Получение данных о каждом объекте который содержит папка
@@ -39,41 +48,45 @@ async function createHtmlBundle() {
     if (!stat.isDirectory()) {
       // Проверка объекта на то, что он является файлом
       const ext = path.extname(file);
-      if(ext === '.html'){
-        let templatePart = path.basename(file, ext)
+      if (ext === ".html") {
+        let templatePart = path.basename(file, ext);
 
         // чтение файла html
-        fs.readFile(filePath, 'utf-8', (err,content) =>{
-          if(err) {
-            throw err
+        fs.readFile(filePath, "utf-8", (err, content) => {
+          if (err) {
+            throw err;
           }
-          
-          objTemplatePoints[templatePart] = content
 
-          if(htmlFile.includes(templatePart)){ // Нахождение всех имён тегов в файле шаблона
+          objTemplatePoints[templatePart] = content;
+
+          if (htmlFile.includes(templatePart)) {
+            // Нахождение всех имён тегов в файле шаблона
             //файл шаблона содержит кусок {{templatePart}}
 
-            let readable = fs.createReadStream(pathToHtmlSource, 'utf8');
+            let readable = fs.createReadStream(pathToHtmlSource, "utf8");
 
-            readable.on('data', (chunk) => {
-              htmlFile = htmlFile.replace(`{{${templatePart}}}`, objTemplatePoints[templatePart]) // Замена шаблонных тегов содержимым файлов-компонентов
+            readable.on("data", (chunk) => {
+              htmlFile = htmlFile.replace(
+                `{{${templatePart}}}`,
+                objTemplatePoints[templatePart]
+              ); // Замена шаблонных тегов содержимым файлов-компонентов
             });
-            readable.on('end', async () => {
-              await fsProm.writeFile(pathToHtmlBundle, htmlFile, 'utf8');
+            readable.on("end", async () => {
+              await fsProm.writeFile(pathToHtmlBundle, htmlFile, "utf8");
             });
           }
-        })
+        });
       }
     }
-  });  
+  });
 }
 
-function createCssBundle(){
-  fsProm.writeFile(pathToCssBundle, '', err => {
+function createCssBundle() {
+  fsProm.writeFile(pathToCssBundle, "", (err) => {
     if (err) {
-      throw err
+      throw err;
     }
-  })
+  });
 
   async function dirReadind() {
     const files = await fsProm.readdir(pathToCssSource);
@@ -86,18 +99,17 @@ function createCssBundle(){
         const ext = path.extname(file);
 
         if (ext === ".css") {
-
-          fs.readFile(filePath, 'utf-8', (err,content) =>{
-            if(err) {
-              throw err
+          fs.readFile(filePath, "utf-8", (err, content) => {
+            if (err) {
+              throw err;
             }
-            
-            fs.appendFile(pathToCssBundle, content, err=>{
-              if(err){
-                throw err
+
+            fs.appendFile(pathToCssBundle, content, (err) => {
+              if (err) {
+                throw err;
               }
-            })
-          })
+            });
+          });
         }
       }
     });
@@ -123,9 +135,8 @@ async function copyAssets(pathBundle, pathSource) {
 
 async function buildPage() {
   await crateBuildFolder();
-  createHtmlBundle();
-  createCssBundle();
-  copyAssets(pathToAssetsBundle, pathToAssetsSource);
+    createHtmlBundle();
+    createCssBundle();
+    copyAssets(pathToAssetsBundle, pathToAssetsSource);
 }
-
 buildPage();
