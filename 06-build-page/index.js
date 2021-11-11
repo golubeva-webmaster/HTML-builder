@@ -9,26 +9,16 @@ const pathToComponentsSource = path.join(__dirname, "components");
 const pathToCssBundle = path.join(__dirname, "project-dist", "style.css");
 const pathToAssetsBundle = path.join(__dirname, "project-dist", "assets");
 const pathToHtmlBundle = path.join(__dirname, "project-dist", "index.html");
+const outputDir = "project-dist";
 
-const needPath = path.join(__dirname, "styles"); //pathToCssSource
-const bandleFile = path.join(__dirname, "project-dist", "bundle.css"); //pathToCssBundle
 let objTemplatePoints = {};
 let htmlFile = "";
 
-async function crateBuildFolder() {
-  const newFolderPath = path.join(__dirname, "project-dist");
 
-  // Удалим сначало папку бандла
-  const stat = await fsProm.stat(newFolderPath);
-  if (stat.isDirectory()) {
-    await fsProm.rm(newFolderPath, { recursive: true, force: true }, (err) => {
-      if (err) {
-        // console.error(err);
-      }
-    });
-  }
-  
-  await fsProm.mkdir(newFolderPath, { recursive: true });
+async function crateBuildFolder() {
+  let outputDirPath = path.resolve(__dirname, outputDir);
+  await fs.promises.rm(outputDirPath, { recursive: true, force: true });
+  await fs.promises.mkdir(outputDirPath, { recursive: true });
 }
 
 async function createHtmlBundle() {
